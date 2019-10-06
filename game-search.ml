@@ -110,11 +110,11 @@ struct
 
   let render_move move =
       Printf.printf "%s "
-      (match move with
-       | Left _ -> "left"
-       | Right _ -> "right"
-       | Up _ -> "up"
-       | Down _ ->  "down")
+      match move with
+      | Left _ -> "left"
+      | Right _ -> "right"
+      | Up _ -> "up"
+      | Down _ ->  "down"
 
   let _bottom_row  = function (_, _, row) -> row
   let _middle_row  = function (_, row, _) -> row
