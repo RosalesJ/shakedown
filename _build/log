@@ -1,0 +1,4 @@
+# dune build
+# OCAMLPARAM: unset
+$ /usr/bin/getconf _NPROCESSORS_ONLN > /var/folders/n5/m8nzwjsn2bs48k_t3yhclw200000gn/T/duneafc0c6.output 2> /dev/null
+$ /Users/coby/.opam/4.07.0/bin/ocamlc.opt -config > /var/folders/n5/m8nzwjsn2bs48k_t3yhclw200000gn/T/dune5303fa.output
