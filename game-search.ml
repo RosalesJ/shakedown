@@ -28,7 +28,7 @@ sig
   val moves : move list
   val render : state -> unit
   val render_move : move -> unit
-  val apply : move -> state -> state
+  val apply : state -> move -> state
   val legal : state -> move -> bool
 end
 
@@ -39,23 +39,34 @@ module Game_Tools (G : Game) :
     val execute : G.move list -> G.state -> G.state
     val pick_random_moves : int -> ?legal:bool -> G.move list
     val legal_moves : G.state -> G.move list
+    val render_moves : G.move list -> unit
   end) =
 struct
   type state = G.state
 
+  let render_moves moves =
+    Printf.printf "[";
+    List.iter ~f:G.render_move moves;
+    Printf.printf "]\n"
+
   let legal_moves state = List.filter G.moves ~f:(G.legal state)
                  
-  let execute fs init = List.fold_right ~f:G.apply ~init:init fs
+  let execute fs init = List.fold ~f:G.apply ~init:init fs
 
   let rec pick_legal_moves_and_execute acc n state legal =
-    if n = 0 then (acc, state)
+    if n = 0 then (List.rev acc, state)
     else
       let move_set =
-        if legal then G.moves
-        else legal_moves state
+        if legal then legal_moves state
+        else G.moves
       in
       let random = List.random_element_exn move_set in
-      pick_legal_moves_and_execute (random::acc) (n - 1) G.solved_state legal
+      let new_state = G.apply state random in
+      G.render state;
+      G.render new_state;
+      G.render_move random;
+      render_moves move_set;
+      pick_legal_moves_and_execute (random::acc) (n - 1) new_state legal
 
   let randomize n =
     pick_legal_moves_and_execute [] n G.solved_state true
@@ -101,8 +112,8 @@ struct
     | (a, 0, c) -> (0, a, c)
     | x -> x
 
-  let left = map_tuple push_row_left
-  let right = map_tuple push_row_right
+  let right = map_tuple push_row_left
+  let left = map_tuple push_row_right
   let up = transpose *> left  *> transpose
   let down = transpose *> right *> transpose
 
@@ -110,11 +121,11 @@ struct
 
   let render_move move =
       Printf.printf "%s "
-      match move with
-      | Left _ -> "left"
-      | Right _ -> "right"
-      | Up _ -> "up"
-      | Down _ ->  "down"
+      (match move with
+       | Left _ -> "left"
+       | Right _ -> "right"
+       | Up _ -> "up"
+       | Down _ ->  "down")
 
   let _bottom_row  = function (_, _, row) -> row
   let _middle_row  = function (_, row, _) -> row
@@ -125,30 +136,22 @@ struct
 
 
   let legal state move =
-    let has_blank (a, b, c) = (a = 0) || (b = 0) || (c = 0) in
+    let has_no_blank (a, b, c) = not ((a = 0) || (b = 0) || (c = 0)) in
     let multiplex_move = function
-    | Left _  -> _right_col
-    | Right _ -> _left_col
-    | Down _  -> _top_row
-    | Up _    -> _bottom_row
+    | Left _  -> _left_col
+    | Right _ -> _right_col
+    | Down _  -> _bottom_row
+    | Up _    -> _top_row
     in
-    state |> (multiplex_move move) |> has_blank
+    state |> (multiplex_move move) |> has_no_blank
 
-  let apply f x = match f with
+  let apply x f = match f with
     | Left g -> g x
     | Right g -> g x
     | Up g -> g x
     | Down g -> g x
 end
 
-
-
 module Search (G : Game) = struct
   type t = G.state
 end
-
-
-module GT = Game_Tools (Eight_Puzzle)
-
-let move = GT.execute (GT.pick_random_moves 1 ~legal:true) Eight_Puzzle.solved_state |> Eight_Puzzle.render
-
