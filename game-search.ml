@@ -26,7 +26,7 @@ module type Game =
 sig
   include Comparator.S
   type move
-  
+
   val solved_state : t
   val moves : move list
   val render : t -> unit
@@ -45,14 +45,14 @@ module Game_Tools (G : Game) :
   end) =
 struct
   include G
-  
+
   let render_moves moves =
     Printf.printf "[";
     List.iter ~f:render_move moves;
     Printf.printf "]\n"
 
   let legal_moves state = List.filter moves ~f:(legal state)
-                 
+
   let execute fs init = List.fold ~f:apply ~init:init fs
 
   let rec pick_legal_moves_and_execute acc n state legal =
@@ -169,7 +169,7 @@ end
 
 module Search (G : Game) = struct
   module Tools = Game_Tools(G)
-  
+
   let visited = Set.empty (module G)
 
   let member = Set.mem visited G.solved_state
@@ -177,7 +177,7 @@ module Search (G : Game) = struct
   type t = Solved of G.move list
          | Deadend of (G.t, G.comparator_witness) Set.t
 
-  
+
   let rec dfs_rec state visited path =
     if G.solved_state = state then Solved (List.rev path)
     else if Set.mem visited state then Deadend visited
@@ -193,23 +193,46 @@ module Search (G : Game) = struct
 
   let dfs state =
     dfs_rec state visited []
-end
- 
 
-    
+
+  let rec bfs_rec queue visited path =
+    if Queue.is_empty queue then Deadend visited
+    else
+      let next_state, last_move = Queue.dequeue_exn queue in
+      if G.solved_state = next_state then
+        Solved path
+
+      else if Set.mem visited next_state then Deadend visited
+      else begin
+        Tools.legal_moves next_state
+        |> List.map ~f:(fun x -> (G.apply next_state x, x))
+        |> List.filter ~f:(function (state, _) -> not (Set.mem visited state))
+        |> Queue.enqueue_all queue;
+
+        bfs_rec queue (Set.add visited next_state) (last_move :: path)
+      end
+
+  let bfs state =
+    let starting_queue = Queue.singleton (state) in
+    bfs_rec starting_queue visited []
+
+end
+
+
+
 let () =
   let module EP = Search(Eight_Puzzle) in
   let module ET = Game_Tools(Eight_Puzzle) in
   let open Eight_Moves in
 
-  let moves = [down; down] in
+  let moves = [down] in
   let starting_state = ET.execute moves Eight_Puzzle.solved_state in
-  
+
   let random_state = starting_state in
-  
+
   Printf.printf "%s\n" "Original state:";
   Eight_Puzzle.render random_state;
-  
+
   EP.dfs random_state
   |> function
   | EP.Deadend visited -> Printf.printf "Searched %i states and didn't find it\n"
