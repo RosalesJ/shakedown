@@ -14,11 +14,12 @@ open Core
 |
 *)
 
-module Tuple_tools = struct
+module Tuple_Tools = struct
   let map_tuple f (a, b, c) = (f a, f b, f c)
   let iter_tuple f (a, b, c) = f a; f b; f c
   let fold_tuple f (a, b, c) = (f (f a b) c)
-  let hash (a, b, c) = a + 13 * (b * 13 + c)
+  let hash const (a, b, c) = a + const * (b + (const * c))
+  let render (a, b, c) = Printf.printf "(%i, %i, %i)\n" a b c
 end
 
 module type Game =
@@ -36,7 +37,7 @@ end
 
 module Game_Tools (G : Game) :
   (sig
-    val randomize_stat : int -> G.t
+    val random_state : int -> G.t
     val execute : G.move list -> G.t -> G.t
     val pick_random_moves : int -> ?legal:bool -> G.move list
     val legal_moves : G.t -> G.move list
@@ -65,7 +66,7 @@ struct
       let new_state = apply state random in
       pick_legal_moves_and_execute (random::acc) (n - 1) new_state legal
 
-  let randomize_stat n =
+  let random_state n =
     pick_legal_moves_and_execute [] n solved_state true
     |> function (_, x) -> x
 
@@ -78,13 +79,12 @@ end
 
 module Eight_Puzzle : Game =
 struct
-  include Tuple_tools
+  include Tuple_Tools
   module T = struct
     type t = (int * int * int) *
              (int * int * int) *
              (int * int * int)  [@@deriving sexp]
-    let f a b =  a + 1693 * b
-    let hash_state x = fold_tuple f (map_tuple hash x)
+    let hash_state x = hash 1693 (map_tuple (hash 13) x)
 
     let compare a b = (hash_state a) - (hash_state b)
   end
@@ -158,6 +158,15 @@ struct
     | Down g -> g x
 end
 
+module Eight_Moves = struct
+  let moves = Eight_Puzzle.moves
+
+  let left = List.nth_exn moves 0
+  let right = List.nth_exn moves 1
+  let up = List.nth_exn moves 2
+  let down = List.nth_exn moves 3
+end
+
 module Search (G : Game) = struct
   module Tools = Game_Tools(G)
   
@@ -166,15 +175,64 @@ module Search (G : Game) = struct
   let member = Set.mem visited G.solved_state
 
   type t = Solved of G.move list
-         | DeadEnd of (G.t, G.comparator_witness) Set.t
+         | Deadend of (G.t, G.comparator_witness) Set.t
 
-  let dfs state visited path =
-    match G.solved_state = state with
-    | true -> Visited path
-    | false ->
+  
+  let rec dfs_rec state visited path =
+    if G.solved_state = state then Solved (List.rev path)
+    else if Set.mem visited state then Deadend visited
+    else
+      let visited = Set.add visited state in
       let f acc move = match acc with
-        | Solved x -> x
-        | Deadend visited -> dfs (G.apply state move) visited (move :: path)
+        | Solved x -> Solved x
+        | Deadend visited -> dfs_rec (G.apply state move) visited (move :: path)
       in
-      
+      let init = Deadend visited in
+      let moves = Tools.legal_moves state in
+      List.fold ~f ~init moves
+
+  let dfs state =
+    dfs_rec state visited []
 end
+ 
+
+    
+let () =
+  let module EP = Search(Eight_Puzzle) in
+  let module ET = Game_Tools(Eight_Puzzle) in
+  let open Eight_Moves in
+
+  let moves = [down; down] in
+  let starting_state = ET.execute moves Eight_Puzzle.solved_state in
+  
+  let random_state = starting_state in
+  
+  Printf.printf "%s\n" "Original state:";
+  Eight_Puzzle.render random_state;
+  
+  EP.dfs random_state
+  |> function
+  | EP.Deadend visited -> Printf.printf "Searched %i states and didn't find it\n"
+                            (Set.count visited ~f:(Fn.const true))
+  | EP.Solved path ->
+    ET.execute path random_state
+    |> Eight_Puzzle.render
+
+
+let () =
+  let module GT = Game_Tools(Eight_Puzzle) in
+  let open Eight_Moves in
+  let open Tuple_Tools in
+
+  let hash_state x = hash 1693 (map_tuple (hash 13) x) in
+  let compare a b = (hash_state a) - (hash_state b) in
+
+  let start = ((0, 1, 2), (3, 4, 5), (6, 7, 8)) in
+  let s = ((3, 1, 2), (0, 4, 5), (6, 7, 8)) in
+  let t = ((3, 1, 2), (6, 4, 5), (0, 7, 8)) in
+
+  Printf.printf "%i\n" (hash_state start);
+  Printf.printf "%i\n" (compare s t);
+  Printf.printf "%i\n" (hash_state s);
+  Printf.printf "%i\n" (hash_state t);
+  Tuple_Tools.render (map_tuple (hash 13) start)
