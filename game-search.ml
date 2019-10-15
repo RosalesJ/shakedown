@@ -170,54 +170,77 @@ end
 module Search (G : Game) = struct
   module Tools = Game_Tools(G)
 
-  let visited = Set.empty (module G)
+  let visited = Map.empty (module G)
 
-  let member = Set.mem visited G.solved_state
+  let member = Map.mem visited G.solved_state
 
-  type t = Solved of G.move list
-         | Deadend of (G.t, G.comparator_witness) Set.t
+  type tree = (G.t, G.t * G.move option, G.comparator_witness) Map.t
 
+  type t = Solved of tree
+         | Deadend of tree
 
-  let rec dfs_rec state visited path =
-    if G.solved_state = state then Solved (List.rev path)
-    else if Set.mem visited state then Deadend visited
+  let reconstruct visited =
+    let rec reconstruct_path visited state path=
+      match Map.find visited state with
+      | None | Some (_, None) -> path
+      | Some (prev_state, Some last_move) ->
+        reconstruct_path visited prev_state (last_move :: path)
+    in
+    reconstruct_path visited G.solved_state []
+
+  let not_visited_neighbors state visited =
+    let f move =
+      let next_state = G.apply state move in
+      match Map.mem visited next_state with
+      | true -> None
+      | false -> Some (next_state, Some move)
+    in
+    Tools.legal_moves state
+    |> List.filter_map ~f
+
+  let rec dfs_rec state visited =
+    if G.solved_state = state then Solved visited
     else
-      let visited = Set.add visited state in
-      let f acc move = match acc with
-        | Solved x -> Solved x
-        | Deadend visited -> dfs_rec (G.apply state move) visited (move :: path)
+      let f acc move =
+        match acc with
+        | Solved visited -> Solved visited
+        | Deadend visited ->
+          let next_state = G.apply state move in
+          match Map.add visited ~key:next_state ~data:(state, Some move) with
+          | `Duplicate -> Deadend visited
+          | `Ok visited -> dfs_rec next_state visited
       in
-      let init = Deadend visited in
-      let moves = Tools.legal_moves state in
-      List.fold ~f ~init moves
+      Tools.legal_moves state
+      |> List.fold ~f ~init:(Deadend visited)
 
   let dfs state =
-    dfs_rec state visited []
+    let visited = Map.add_exn ~key:state ~data:(state, None) visited in
+    match dfs_rec state visited with
+    | Deadend _ -> None
+    | Solved visited -> Some (reconstruct visited)
 
-
-  let rec bfs_rec queue visited path =
-    if Queue.is_empty queue then Deadend visited
-    else
-      let next_state, last_move = Queue.dequeue_exn queue in
-      if G.solved_state = next_state then
-        Solved path
-
-      else if Set.mem visited next_state then Deadend visited
-      else begin
-        Tools.legal_moves next_state
-        |> List.map ~f:(fun x -> (G.apply next_state x, x))
-        |> List.filter ~f:(function (state, _) -> not (Set.mem visited state))
-        |> Queue.enqueue_all queue;
-
-        bfs_rec queue (Set.add visited next_state) (last_move :: path)
-      end
-
-  let bfs state =
-    let starting_queue = Queue.singleton (state) in
-    bfs_rec starting_queue visited []
+  (* let rec bfs_rec queue visited path =
+   *   if Queue.is_empty queue then Deadend visited
+   *   else
+   *     let next_state, last_move = Queue.dequeue_exn queue in
+   *     if G.solved_state = next_state then
+   *       Solved path
+   *
+   *     else if Set.mem visited next_state then Deadend visited
+   *     else begin
+   *       Tools.legal_moves next_state
+   *       |> List.map ~f:(fun x -> (G.apply next_state x, x))
+   *       |> List.filter ~f:(function (state, _) -> not (Set.mem visited state))
+   *       |> Queue.enqueue_all queue;
+   *
+   *       bfs_rec queue (Set.add visited next_state) (last_move :: path)
+   *     end
+   *
+   * let bfs state =
+   *   let starting_queue = Queue.singleton (state) in
+   *   bfs_rec starting_queue visited [] *)
 
 end
-
 
 
 let () =
@@ -225,19 +248,16 @@ let () =
   let module ET = Game_Tools(Eight_Puzzle) in
   let open Eight_Moves in
 
-  let moves = [down] in
-  let starting_state = ET.execute moves Eight_Puzzle.solved_state in
-
-  let random_state = starting_state in
+  let random_state = ET.random_state 500 in
 
   Printf.printf "%s\n" "Original state:";
   Eight_Puzzle.render random_state;
 
   EP.dfs random_state
   |> function
-  | EP.Deadend visited -> Printf.printf "Searched %i states and didn't find it\n"
-                            (Set.count visited ~f:(Fn.const true))
-  | EP.Solved path ->
+  | None -> Printf.printf "Searched states and didn't find it\n"
+  | Some path ->
+  Printf.printf "Path length %i\n" (List.length path);
     ET.execute path random_state
     |> Eight_Puzzle.render
 
