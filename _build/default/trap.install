@@ -1,7 +1,8 @@
 lib: [
-  "_build/install/default/lib/trap/META" {"META"}
-  "_build/install/default/lib/trap/opam" {"opam"}
+  "_build/install/default/lib/trap/META"
+  "_build/install/default/lib/trap/dune-package"
+  "_build/install/default/lib/trap/opam"
 ]
 bin: [
-  "_build/install/default/bin/trap" {"trap"}
+  "_build/install/default/bin/shakedown"
 ]
