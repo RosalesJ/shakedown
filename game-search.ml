@@ -188,6 +188,10 @@ module Search (G : Game) = struct
     in
     reconstruct_path visited G.solved_state []
 
+  let handle_tree = function 
+    | Deadend visited -> None, Map.length visited
+    | Solved visited -> Some (reconstruct visited), Map.length visited
+
   let not_visited_neighbors state visited =
     let f move =
       let next_state = G.apply state move in
@@ -224,9 +228,8 @@ module Search (G : Game) = struct
 
   let dfs state =
     let visited = Map.add_exn ~key:state ~data:(state, None) visited in
-    match dfs_rec state visited with
-    | Deadend _ -> None
-    | Solved visited -> Some (reconstruct visited)
+    dfs_rec state visited
+    |> handle_tree
 
   
   let rec bfs_rec queue visited =
@@ -243,9 +246,9 @@ module Search (G : Game) = struct
   let bfs state =
     let visited = Map.singleton (module G) state (state, None) in
     let queue = Queue.singleton state in
-    match bfs_rec queue visited with
-    | Deadend visited -> None, Map.length visited
-    | Solved visited -> Some (reconstruct visited), Map.length visited
+    bfs_rec queue visited
+    |> handle_tree
+
 end
 
 
@@ -259,7 +262,7 @@ let () =
   Printf.printf "%s\n" "Original state:";
   Eight_Puzzle.render random_state;
 
-  EP.bfs random_state
+  EP.dfs random_state
   |> function
   | (None, num) -> Printf.printf "Searched %i states and didn't find the solution\n" num
   | (Some path, num) ->
