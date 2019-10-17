@@ -1,7 +1,0 @@
-lib: [
-  "_build/install/default/lib/trap/META" {"META"}
-  "_build/install/default/lib/trap/opam" {"opam"}
-]
-bin: [
-  "_build/install/default/bin/trap" {"trap"}
-]

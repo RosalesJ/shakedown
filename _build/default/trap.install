@@ -1,8 +1,0 @@
-lib: [
-  "_build/install/default/lib/trap/META"
-  "_build/install/default/lib/trap/dune-package"
-  "_build/install/default/lib/trap/opam"
-]
-bin: [
-  "_build/install/default/bin/shakedown"
-]
