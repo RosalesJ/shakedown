@@ -11,6 +11,10 @@ sig
   val render_move : move -> unit
   val apply : t -> move -> t
   val legal : t -> move -> bool
+
+  module H : sig
+    val heuristic : t -> int
+  end
 end
 
 module Tools (G : T) :

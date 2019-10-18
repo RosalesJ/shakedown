@@ -81,4 +81,24 @@ struct
     | Right g -> g x
     | Up g -> g x
     | Down g -> g x
+
+  module H = struct
+    let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) =
+      [a1; a2; a3; b1; b2; b3; c1; c2; c3]
+  
+    let flat_solved = flatten solved_state
+  
+    let h1 state =
+      let f acc (x, y) =
+        match x = y with
+        | true -> acc
+        | false -> acc + 1
+      in
+      flatten state
+      |> List.zip_exn flat_solved
+      |> List.fold ~f ~init:0
+
+    let heuristic = h1
+  end
 end
+
