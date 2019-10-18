@@ -85,20 +85,18 @@ module Space (G : Game.T) = struct
   let rec best_first_rec heap visited =
     if Heap.is_empty heap then Deadend visited
     else
-      let state = Heap.top_exn heap in
+      let state = Heap.pop_exn heap in
       if G.solved_state = state then Solved visited
-      else begin
+      else
         match explore_neighbors state visited with
         | (visited, new_states) ->
           List.iter new_states ~f:(Heap.add heap);
           best_first_rec heap visited
-      end
 
   let best_first state h =
     let cmp a b = h a - h b in
     let heap = Heap.create ~cmp () in
     let visited = Map.singleton (module G) state (state, None) in
-
     Heap.add heap state;
 
     best_first_rec heap visited
