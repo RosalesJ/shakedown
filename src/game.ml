@@ -1,6 +1,6 @@
 open Core
 
-module type Game =
+module type T =
 sig
   include Comparator.S
   type move
@@ -13,7 +13,7 @@ sig
   val legal : t -> move -> bool
 end
 
-module Game_Tools (G : Game) :
+module Tools (G : T) :
   (sig
     val random_state : int -> G.t
     val execute : G.move list -> G.t -> G.t

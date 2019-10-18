@@ -1,8 +1,7 @@
 open Core
-open Game
 
-module Search (G : Game) = struct
-  module Tools = Game_Tools(G)
+module Space (G : Game.T) = struct
+  module GT = Game.Tools(G)
 
   let visited = Map.empty (module G)
 
@@ -33,7 +32,7 @@ module Search (G : Game) = struct
       | true -> None
       | false -> Some (next_state, Some move)
     in
-    Tools.legal_moves state
+    GT.legal_moves state
     |> List.filter_map ~f
 
   let explore_neighbors state visited =
@@ -43,7 +42,7 @@ module Search (G : Game) = struct
       | `Duplicate -> (vis, new_states)
       | `Ok v -> (v, next_state :: new_states)
     in
-    List.fold ~f ~init:(visited, []) (Tools.legal_moves state)
+    List.fold ~f ~init:(visited, []) (GT.legal_moves state)
 
   let rec dfs_rec state visited =
     if G.solved_state = state then Solved visited
@@ -57,7 +56,7 @@ module Search (G : Game) = struct
           | `Duplicate -> Deadend visited
           | `Ok visited -> dfs_rec next_state visited
       in
-      Tools.legal_moves state
+      GT.legal_moves state
       |> List.fold ~f ~init:(Deadend visited)
 
   let dfs state =

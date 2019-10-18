@@ -1,10 +1,10 @@
 open Core
-open Game
+open Common
 
 
-module Eight_Puzzle : Game =
+module Eight_Puzzle : Game.T =
 struct
-  include Common.Tuple_Tools
+  include Tuple_Tools
   module T = struct
     type t = (int * int * int) *
              (int * int * int) *
@@ -81,13 +81,4 @@ struct
     | Right g -> g x
     | Up g -> g x
     | Down g -> g x
-end
-
-module Eight_Moves = struct
-  let moves = Eight_Puzzle.moves
-
-  let left = List.nth_exn moves 0
-  let right = List.nth_exn moves 1
-  let up = List.nth_exn moves 2
-  let down = List.nth_exn moves 3
 end
