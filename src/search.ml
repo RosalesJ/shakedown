@@ -22,7 +22,7 @@ module Space (G : Game.T) = struct
     in
     reconstruct_path visited G.solved_state []
 
-  let handle_tree = function 
+  let handle_tree = function
     | Deadend visited -> None, Map.length visited
     | Solved visited -> Some (reconstruct visited), Map.length visited
 
@@ -65,13 +65,13 @@ module Space (G : Game.T) = struct
     dfs_rec state visited
     |> handle_tree
 
-  
+
   let rec bfs_rec queue visited =
     if Queue.is_empty queue then Deadend visited
     else
       let state = Queue.dequeue_exn queue in
       if G.solved_state = state then Solved visited
-      else 
+      else
         match explore_neighbors state visited with
         | (visited, new_states) ->
           Queue.enqueue_all queue new_states;
@@ -119,10 +119,29 @@ module Space (G : Game.T) = struct
         let sorted = List.sort ~compare states in
         let next_gen = List.take sorted k in
         beam_rec k compare visited next_gen
-      
+
   let beam k h state =
     let compare s t = h s - h t in
     let visited = visited_singleton state in
     beam_rec k compare visited [state]
+    |> handle_tree
+
+  let rec a_star_rec heap visited =
+    if Heap.is_empty heap then Deadend visited
+    else
+      let state, g = Heap.pop_exn heap in
+      if G.solved_state = state then Solved visited
+      else
+        match explore_neighbors state visited with
+        | (visited, new_states) ->
+          List.iter new_states ~f:(fun x -> Heap.add heap (x, g + 1));
+          a_star_rec heap visited
+
+  let a_star h state =
+    let cmp (a, g_a) (b, g_b) = (h a + g_a) - (h b + g_b) in
+    let heap = Heap.create ~cmp () in
+    let visited = visited_singleton state in
+    Heap.add heap (state, 0);
+    a_star_rec heap visited
     |> handle_tree
 end
