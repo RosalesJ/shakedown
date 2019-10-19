@@ -85,20 +85,50 @@ struct
   module H = struct
     let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) =
       [a1; a2; a3; b1; b2; b3; c1; c2; c3]
-  
-    let flat_solved = flatten solved_state
-  
-    let h1 state =
-      let f acc (x, y) =
-        match x = y with
-        | true -> acc
-        | false -> acc + 1
-      in
-      flatten state
-      |> List.zip_exn flat_solved
-      |> List.fold ~f ~init:0
 
-    let heuristic = h1
+    let flat_solved = flatten solved_state
+
+    (* let h1 state =
+     *   let f acc (x, y) =
+     *     match x = y with
+     *     | true -> acc
+     *     | false -> acc + 1
+     *   in
+     *   flatten state
+     *   |> List.zip_exn flat_solved
+     *   |> List.fold ~f ~init:0 *)
+
+    let location num (x, y, z) =
+      let num_in (a, b, c) =
+        if num = a then Some 0
+        else if num = b then Some 1
+        else if num = c then Some 2
+        else None
+      in
+      match num_in x with
+      | Some y -> (0, y)
+      | None ->
+        match num_in y with
+        | Some y -> (1, y)
+        | None ->
+          match num_in z with
+          | Some y -> (2, y)
+          | None -> (-1, -1)
+
+    let h2 state =
+      let taxicab (x1, y1) (x2, y2) =
+        abs (x1 - x2) + abs (y1 - y2)
+      in
+      let compare num =
+        let home = location num solved_state in
+        let rand = location num state in
+        taxicab home rand
+      in
+      let f acc x =
+        acc + compare x
+      in
+      List.fold ~f flat_solved ~init:0
+
+    let heuristic = h2
   end
 end
-
