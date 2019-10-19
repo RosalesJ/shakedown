@@ -4,6 +4,7 @@ module Space (G : Game.T) = struct
   module GT = Game.Tools(G)
 
   let visited = Map.empty (module G)
+  let visited_singleton state = Map.singleton (module G) state (state, None)
 
   let member = Map.mem visited G.solved_state
 
@@ -77,7 +78,7 @@ module Space (G : Game.T) = struct
           bfs_rec queue visited
 
   let bfs state =
-    let visited = Map.singleton (module G) state (state, None) in
+    let visited = visited_singleton state in
     let queue = Queue.singleton state in
     bfs_rec queue visited
     |> handle_tree
@@ -93,12 +94,35 @@ module Space (G : Game.T) = struct
           List.iter new_states ~f:(Heap.add heap);
           best_first_rec heap visited
 
-  let best_first state h =
+  let best_first h state =
     let cmp a b = h a - h b in
     let heap = Heap.create ~cmp () in
-    let visited = Map.singleton (module G) state (state, None) in
+    let visited = visited_singleton state in
     Heap.add heap state;
 
     best_first_rec heap visited
+    |> handle_tree
+
+  let rec beam_rec k compare visited frontier=
+    if List.is_empty frontier
+    then Deadend visited
+    else if List.exists frontier ~f:((=) G.solved_state)
+    then Solved visited
+    else
+      let f (visited, states) x =
+      match explore_neighbors x visited with
+        | (visited, new_states) ->
+          (visited, List.rev_append new_states states)
+      in
+      List.fold frontier ~f ~init:(visited, [])
+      |> function (visited, states) ->
+        let sorted = List.sort ~compare states in
+        let next_gen = List.take sorted k in
+        beam_rec k compare visited next_gen
+      
+  let beam k h state =
+    let compare s t = h s - h t in
+    let visited = visited_singleton state in
+    beam_rec k compare visited [state]
     |> handle_tree
 end
