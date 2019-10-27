@@ -26,7 +26,10 @@ struct
 
   let display_tile x = if x = 0 then "*" else string_of_int x
 
-  let solved_state = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
+  let solved_witness = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
+
+  let solved = (=) solved_witness
+
   let render = iter_tuple (function (a, b, c) -> Printf.printf "%s %s %s\n"
                                                    (display_tile a) (display_tile b) (display_tile c))
 
@@ -86,7 +89,7 @@ struct
     let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) =
       [a1; a2; a3; b1; b2; b3; c1; c2; c3]
 
-    let flat_solved = flatten solved_state
+    let flat_solved = flatten solved_witness
 
     (* let h1 state =
      *   let f acc (x, y) =
@@ -120,7 +123,7 @@ struct
         abs (x1 - x2) + abs (y1 - y2)
       in
       let compare num =
-        let home = location num solved_state in
+        let home = location num solved_witness in
         let rand = location num state in
         taxicab home rand
       in

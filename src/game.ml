@@ -5,7 +5,8 @@ sig
   include Comparator.S
   type move
 
-  val solved_state : t
+  val solved : t -> bool
+  val solved_witness : t
   val moves : move list
   val render : t -> unit
   val render_move : move -> unit
@@ -19,15 +20,14 @@ end
 
 module Tools (G : T) :
   (sig
-    val random_state : int -> G.t
+    val random_state : G.t -> int -> G.t
     val execute : G.move list -> G.t -> G.t
-    val pick_random_moves : int -> bool -> G.move list
+    val pick_random_moves : G.t -> int -> bool -> G.move list
     val legal_moves : G.t -> G.move list
     val render_moves : G.move list -> unit
   end) =
 struct
   include G
-
   let render_moves moves =
     Printf.printf "[";
     List.iter ~f:render_move moves;
@@ -48,11 +48,11 @@ struct
       let new_state = apply state random in
       pick_legal_moves_and_execute (random::acc) (n - 1) new_state legal
 
-  let random_state n =
-    pick_legal_moves_and_execute [] n solved_state true
+  let random_state state n =
+    pick_legal_moves_and_execute [] n state true
     |> function (_, x) -> x
 
-  let pick_random_moves n legal =
-    pick_legal_moves_and_execute [] n solved_state legal
+  let pick_random_moves state n legal =
+    pick_legal_moves_and_execute [] n state legal
     |> function (moves,  _) -> moves
 end

@@ -6,25 +6,23 @@ module Space (G : Game.T) = struct
   let visited = Map.empty (module G)
   let visited_singleton state = Map.singleton (module G) state (state, None)
 
-  let member = Map.mem visited G.solved_state
-
   type tree = (G.t, G.t * G.move option, G.comparator_witness) Map.t
 
-  type t = Solved of tree
+  type t = Solved of G.t * tree
          | Deadend of tree
 
-  let reconstruct visited =
+  let reconstruct solved_state visited =
     let rec reconstruct_path visited state path=
       match Map.find visited state with
       | None | Some (_, None) -> path
       | Some (prev_state, Some last_move) ->
         reconstruct_path visited prev_state (last_move :: path)
     in
-    reconstruct_path visited G.solved_state []
+    reconstruct_path visited solved_state []
 
   let handle_tree = function
     | Deadend visited -> None, Map.length visited
-    | Solved visited -> Some (reconstruct visited), Map.length visited
+    | Solved (solved, visited) -> Some (reconstruct solved visited), Map.length visited
 
   let not_visited_neighbors state visited =
     let f move =
@@ -46,11 +44,11 @@ module Space (G : Game.T) = struct
     List.fold ~f ~init:(visited, []) (GT.legal_moves state)
 
   let rec dfs_rec state visited =
-    if G.solved_state = state then Solved visited
+    if G.solved state then Solved (state, visited)
     else
       let f acc move =
         match acc with
-        | Solved visited -> Solved visited
+        | Solved (state, visited) -> Solved (state, visited)
         | Deadend visited ->
           let next_state = G.apply state move in
           match Map.add visited ~key:next_state ~data:(state, Some move) with
@@ -70,7 +68,7 @@ module Space (G : Game.T) = struct
     if Queue.is_empty queue then Deadend visited
     else
       let state = Queue.dequeue_exn queue in
-      if G.solved_state = state then Solved visited
+      if G.solved state then Solved (state, visited)
       else
         match explore_neighbors state visited with
         | (visited, new_states) ->
@@ -87,7 +85,7 @@ module Space (G : Game.T) = struct
     if Heap.is_empty heap then Deadend visited
     else
       let state = Heap.pop_exn heap in
-      if G.solved_state = state then Solved visited
+      if G.solved state then Solved (state, visited)
       else
         match explore_neighbors state visited with
         | (visited, new_states) ->
@@ -106,8 +104,8 @@ module Space (G : Game.T) = struct
   let rec beam_rec k compare visited frontier=
     if List.is_empty frontier
     then Deadend visited
-    else if List.exists frontier ~f:((=) G.solved_state)
-    then Solved visited
+    else if List.exists frontier ~f:(G.solved)
+    then Solved (List.find_exn ~f:(G.solved) frontier, visited)
     else
       let f (visited, states) x =
       match explore_neighbors x visited with
@@ -130,7 +128,7 @@ module Space (G : Game.T) = struct
     if Heap.is_empty heap then Deadend visited
     else
       let state, g = Heap.pop_exn heap in
-      if G.solved_state = state then Solved visited
+      if G.solved state then Solved (state, visited)
       else
         match explore_neighbors state visited with
         | (visited, new_states) ->

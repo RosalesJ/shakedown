@@ -4,14 +4,15 @@ open Eight
 let () =
   let module EP = Search.Space(Eight_Puzzle) in
   let module ET = Game.Tools(Eight_Puzzle) in
+  let solved = Eight_Puzzle.solved_witness in
 
-  let random_state = ET.random_state 133310 in
+  let random_state = ET.random_state solved 1310931 in
   let heu = Eight_Puzzle.H.heuristic random_state in
 
   Printf.printf "%s with heuristic %i\n" "Original state:" heu;
   Eight_Puzzle.render random_state;
 
-  EP.a_star Eight_Puzzle.H.heuristic random_state
+  EP.best_first Eight_Puzzle.H.heuristic random_state
   |> function
   | (None, num) -> Printf.printf "Searched %i states and didn't find the solution\n" num
   | (Some path, num) ->
