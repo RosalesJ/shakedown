@@ -2,7 +2,9 @@ open Core
 open Eight
 
 let () =
-  let module Puzzle : Game.H = Eight_H2 in
+  let module Heuristic = Eight_Puzzle.H1 in
+
+  let module Puzzle = Game.With_Heuristic (Eight_Puzzle) (Heuristic) in
 
   let module EP = Search.Metric_Space(Puzzle) in
   let module ET = Game.Tools(Puzzle) in

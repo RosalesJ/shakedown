@@ -95,9 +95,8 @@ end
 
 
 
-module Metric_Space (G : Game.H) = struct
+module Metric_Space (G : Game.T) = struct
   module S = Space(G)
-
   open S
 
   let best_first h state =

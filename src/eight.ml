@@ -64,9 +64,9 @@ struct
   let _bottom_row  = function (_, _, row) -> row
   let _middle_row  = function (_, row, _) -> row
   let _top_row     = function (row, _, _) -> row
-  let _right_col   = transpose *> _bottom_row
-  let _middle_col : t -> int * int * int  = transpose *> _middle_row
-  let _left_col    = transpose *> _top_row
+  let _right_col  : t -> int * int * int = transpose *> _bottom_row
+  let _middle_col : t -> int * int * int = transpose *> _middle_row
+  let _left_col   : t -> int * int * int = transpose *> _top_row
 
 
   let legal state move =
@@ -88,8 +88,9 @@ struct
   let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) = [a1; a2; a3; b1; b2; b3; c1; c2; c3]
   let flat_solved = flatten solved_witness
 
-  module H1 =
+  module H1 : (Game.H with type h = t) =
   struct
+    type h = t
     let heuristic state =
       let f acc (x, y) =
         match x = y with
@@ -136,18 +137,4 @@ struct
   end
 end
 
-module Eight_Game = (Eight_Puzzle : Game.T)
-
-module Eight_H1 = (
-  struct
-    include Eight_Puzzle
-    include Eight_Puzzle.H1
-  end :
-    Game.H)
-
-module Eight_H2 = (
-  struct
-    include Eight_Puzzle
-    include Eight_Puzzle.H2
-  end :
-    Game.H)
+module Eight_H2 = Game.With_Heuristic (Eight_Puzzle) (Eight_Puzzle.H1)
