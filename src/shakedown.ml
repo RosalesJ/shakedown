@@ -1,22 +1,19 @@
 open Core
-open Eight
 
 let () =
-  let module Heuristic = Eight_Puzzle.H1 in
+  let module Heuristic = Eight_puzzle.H2 in
+  let module Puzzle = Eight_puzzle in
 
-  let module Puzzle = Game.With_Heuristic (Eight_Puzzle) (Heuristic) in
+  let module EP = Search.Metric_space (Puzzle) (Heuristic) in
+  let module ET = Game.Tools (Puzzle) in
 
-  let module EP = Search.Metric_Space(Puzzle) in
-  let module ET = Game.Tools(Puzzle) in
-  let solved = Puzzle.solved_witness in
-
-  let random_state = ET.random_state solved 1310931 in
-  let heu = Puzzle.heuristic random_state in
+  let random_state = ET.random_state Puzzle.solved_witness 1310931 in
+  let heu = Heuristic.heuristic random_state in
 
   Printf.printf "%s with heuristic %i\n" "Original state:" heu;
   Puzzle.render random_state;
 
-  EP.best_first Puzzle.heuristic random_state
+  EP.best_first random_state
   |> function
   | (None, num) -> Printf.printf "Searched %i states and didn't find the solution\n" num
   | (Some path, num) ->

@@ -14,23 +14,10 @@ sig
   val legal : t -> move -> bool
 end
 
-(* I need to try and get this to be bette *)
 module type H =
 sig
   type h
   val heuristic : h -> int
-end
-
-module type R =
-sig
-  include T
-  val heuristic : t -> int
-end
-
-module With_Heuristic = functor (G : T) (Heu : H with type h = G.t) ->
-struct
-  include G
-  include Heu
 end
 
 module Tools (G : T) :

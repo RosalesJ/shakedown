@@ -93,13 +93,12 @@ module Space (G : Game.T) = struct
           best_first_rec heap visited
 end
 
+module Metric_space (G : Game.T) (H : Game.H with type h = G.t ) = struct
+  include Space(G)
 
+  let h = H.heuristic
 
-module Metric_Space (G : Game.T) = struct
-  module S = Space(G)
-  open S
-
-  let best_first h state =
+  let best_first state =
     let cmp a b = h a - h b in
     let heap = Heap.create ~cmp () in
     let visited = visited_singleton state in
@@ -125,7 +124,7 @@ module Metric_Space (G : Game.T) = struct
         let next_gen = List.take sorted k in
         beam_rec k compare visited next_gen
 
-  let beam k h state =
+  let beam k state =
     let compare s t = h s - h t in
     let visited = visited_singleton state in
     beam_rec k compare visited [state]
@@ -142,7 +141,7 @@ module Metric_Space (G : Game.T) = struct
           List.iter new_states ~f:(fun x -> Heap.add heap (x, g + 1));
           a_star_rec heap visited
 
-  let a_star h state =
+  let a_star state =
     let cmp (a, g_a) (b, g_b) = (h a + g_a) - (h b + g_b) in
     let heap = Heap.create ~cmp () in
     let visited = visited_singleton state in

@@ -1,4 +1,4 @@
-module Tuple_Tools = struct
+module Tuple_tools = struct
   let map_tuple f (a, b, c) = (f a, f b, f c)
   let iter_tuple f (a, b, c) = f a; f b; f c
   let fold_tuple f (a, b, c) = (f (f a b) c)
