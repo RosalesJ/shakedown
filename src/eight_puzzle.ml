@@ -26,7 +26,7 @@ let display_tile x = if x = 0 then "*" else string_of_int x
 
 let solved_witness = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
 
-let solved = (=) solved_witness
+let solvedp = (=) solved_witness
 
 let render = iter_tuple (function (a, b, c) -> Printf.printf "%s %s %s\n"
                                                  (display_tile a) (display_tile b) (display_tile c))

@@ -6,7 +6,7 @@ sig
   include Comparator.S
   type move
 
-  val solved : t -> bool
+  val solvedp : t -> bool
   val solved_witness : t
   val moves : move list
   val render : t -> unit
