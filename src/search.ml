@@ -1,7 +1,7 @@
 open Core
 
 module Space (G : Game.T) = struct
-  module GT = Game.Tools(G)
+  include Game.Tools(G)
 
   let visited = Map.empty (module G)
   let visited_singleton state = Map.singleton (module G) state (state, None)
@@ -26,22 +26,22 @@ module Space (G : Game.T) = struct
 
   let not_visited_neighbors state visited =
     let f move =
-      let next_state = G.apply state move in
+      let next_state = move <*> state in
       match Map.mem visited next_state with
       | true -> None
       | false -> Some (next_state, Some move)
     in
-    GT.legal_moves state
+    legal_moves state
     |> List.filter_map ~f
 
   let explore_neighbors state visited =
     let f (vis, new_states) move =
-      let next_state = G.apply state move in
+      let next_state = move <*> state in
       match Map.add vis ~key:next_state ~data:(state, Some move) with
       | `Duplicate -> (vis, new_states)
       | `Ok v -> (v, next_state :: new_states)
     in
-    List.fold ~f ~init:(visited, []) (GT.legal_moves state)
+    List.fold ~f ~init:(visited, []) (legal_moves state)
 
   let rec dfs_rec state visited =
     if G.solved state then Solved (state, visited)
@@ -50,12 +50,12 @@ module Space (G : Game.T) = struct
         match acc with
         | Solved (state, visited) -> Solved (state, visited)
         | Deadend visited ->
-          let next_state = G.apply state move in
+          let next_state = move <*> state in
           match Map.add visited ~key:next_state ~data:(state, Some move) with
           | `Duplicate -> Deadend visited
           | `Ok visited -> dfs_rec next_state visited
       in
-      GT.legal_moves state
+      legal_moves state
       |> List.fold ~f ~init:(Deadend visited)
 
   let dfs state =
@@ -93,7 +93,7 @@ module Space (G : Game.T) = struct
           best_first_rec heap visited
 end
 
-module Metric_space (G : Game.T) (H : Game.H with type h = G.t ) = struct
+module Metric_space (G : Game.T) (H : Game.H with type t = G.t ) = struct
   include Space(G)
 
   let h = H.heuristic

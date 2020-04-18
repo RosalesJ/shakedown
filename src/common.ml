@@ -1,3 +1,5 @@
+let flip f x y = f y x
+
 module Tuple_tools = struct
   let map_tuple f (a, b, c) = (f a, f b, f c)
   let iter_tuple f (a, b, c) = f a; f b; f c

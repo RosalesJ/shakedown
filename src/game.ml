@@ -1,4 +1,5 @@
 open Core
+open Common
 
 module type T =
 sig
@@ -16,24 +17,19 @@ end
 
 module type H =
 sig
-  type h
-  val heuristic : h -> int
+  type t
+  val heuristic : t -> int
 end
 
-module Tools (G : T) :
-  (sig
-    val random_state : G.t -> int -> G.t
-    val execute : G.move list -> G.t -> G.t
-    val pick_random_moves : G.t -> int -> bool -> G.move list
-    val legal_moves : G.t -> G.move list
-    val render_moves : G.move list -> unit
-  end) =
+module Tools (G : T) =
 struct
   include G
   let render_moves moves =
     Printf.printf "[";
     List.iter ~f:render_move moves;
     Printf.printf "]\n"
+
+  let (<*>) = flip apply
 
   let legal_moves state = List.filter moves ~f:(legal state)
 
@@ -47,7 +43,7 @@ struct
         else moves
       in
       let random = List.random_element_exn move_set in
-      let new_state = apply state random in
+      let new_state = random <*> state in
       pick_legal_moves_and_execute (random::acc) (n - 1) new_state legal
 
   let random_state state n =

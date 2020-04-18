@@ -14,9 +14,10 @@ end
 include T
 include Comparator.Make(T)
 
-type transition = t -> t
-
-type move = Left of transition | Right of transition | Up of transition | Down of transition
+type move = Left of  (t -> t)
+          | Right of (t -> t)
+          | Up of    (t -> t)
+          | Down of  (t -> t)
 
 let ( *> ) a b x = x |> a |> b
 (* let (==) a b = phys_equal a b *)
@@ -76,7 +77,7 @@ let legal state move =
   in
   state |> (multiplex_move move) |> has_no_blank
 
-let apply x f = match f with
+let apply x = function
   | Left g -> g x
   | Right g -> g x
   | Up g -> g x
@@ -85,9 +86,10 @@ let apply x f = match f with
 let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) = [a1; a2; a3; b1; b2; b3; c1; c2; c3]
 let flat_solved = flatten solved_witness
 
+(* Count how many tiles are out of place *)
 module H1 =
 struct
-  type h = t
+  include T
 
   let heuristic state =
     let f acc (x, y) =
@@ -100,9 +102,10 @@ struct
     |> List.fold ~f ~init:0
 end
 
+(* The taxicab distance between the state and the goal *)
 module H2 =
 struct
-  type h = t
+  include T
 
   let location num (x, y, z) =
     let num_in (a, b, c) =
