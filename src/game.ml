@@ -12,10 +12,13 @@ sig
   val render_move : move -> unit
   val apply : t -> move -> t
   val legal : t -> move -> bool
+end
 
-  module H : sig
-    val heuristic : t -> int
-  end
+(* I need to try and get this to be bette *)
+module type H =
+sig
+  include T
+  val heuristic : t -> int
 end
 
 module Tools (G : T) :

@@ -91,6 +91,14 @@ module Space (G : Game.T) = struct
         | (visited, new_states) ->
           List.iter new_states ~f:(Heap.add heap);
           best_first_rec heap visited
+end
+
+
+
+module Metric_Space (G : Game.H) = struct
+  module S = Space(G)
+
+  open S
 
   let best_first h state =
     let cmp a b = h a - h b in

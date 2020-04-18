@@ -2,7 +2,7 @@ open Core
 open Common
 
 
-module Eight_Puzzle : Game.T =
+module Eight_Puzzle =
 struct
   include Tuple_Tools
   module T = struct
@@ -65,7 +65,7 @@ struct
   let _middle_row  = function (_, row, _) -> row
   let _top_row     = function (row, _, _) -> row
   let _right_col   = transpose *> _bottom_row
-  let _middle_col  = transpose *> _middle_row
+  let _middle_col : t -> int * int * int  = transpose *> _middle_row
   let _left_col    = transpose *> _top_row
 
 
@@ -85,22 +85,24 @@ struct
     | Up g -> g x
     | Down g -> g x
 
-  module H = struct
-    let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) =
-      [a1; a2; a3; b1; b2; b3; c1; c2; c3]
+  let flatten ((a1, a2, a3), (b1, b2, b3), (c1, c2, c3)) = [a1; a2; a3; b1; b2; b3; c1; c2; c3]
+  let flat_solved = flatten solved_witness
 
-    let flat_solved = flatten solved_witness
+  module H1 =
+  struct
+    let heuristic state =
+      let f acc (x, y) =
+        match x = y with
+        | true -> acc
+        | false -> acc + 1
+      in
+      flatten state
+      |> List.zip_exn flat_solved
+      |> List.fold ~f ~init:0
+  end
 
-    (* let h1 state =
-     *   let f acc (x, y) =
-     *     match x = y with
-     *     | true -> acc
-     *     | false -> acc + 1
-     *   in
-     *   flatten state
-     *   |> List.zip_exn flat_solved
-     *   |> List.fold ~f ~init:0 *)
-
+  module H2 =
+  struct
     let location num (x, y, z) =
       let num_in (a, b, c) =
         if num = a then Some 0
@@ -118,7 +120,7 @@ struct
           | Some y -> (2, y)
           | None -> (-1, -1)
 
-    let h2 state =
+    let heuristic state =
       let taxicab (x1, y1) (x2, y2) =
         abs (x1 - x2) + abs (y1 - y2)
       in
@@ -131,7 +133,21 @@ struct
         acc + compare x
       in
       List.fold ~f flat_solved ~init:0
-
-    let heuristic = h2
   end
 end
+
+module Eight_Game = (Eight_Puzzle : Game.T)
+
+module Eight_H1 = (
+  struct
+    include Eight_Puzzle
+    include Eight_Puzzle.H1
+  end :
+    Game.H)
+
+module Eight_H2 = (
+  struct
+    include Eight_Puzzle
+    include Eight_Puzzle.H2
+  end :
+    Game.H)
