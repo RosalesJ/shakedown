@@ -93,6 +93,7 @@ end
 
 module Metric_space (G : Game.T) (H : Game.H with type t = G.t ) = struct
   include Space(G)
+  module Heap = Pairing_heap
 
   let h = H.heuristic
 
@@ -178,11 +179,11 @@ module Metric_space (G : Game.T) (H : Game.H with type t = G.t ) = struct
             let weight = 1 in
             let new_cost = cost + weight in
             let new_node = (neighbor, new_cost, via) in
-            match Heap.find_elt heap ~f:(fun (a, _,  _) -> a = neighbor) with
+            match Heap.find_elt heap ~f:(fun (a, _,  _) -> phys_equal a neighbor) with
             | None -> Heap.add heap new_node
             | Some elt -> Heap.Elt.value_exn elt |> fun (_, prev_cost, _) ->
                 if new_cost < prev_cost then
-                  ignore (Heap.update heap elt new_node);
+                  ignore (Heap.update heap elt new_node : (G.t * int * (G.t * move option)) Heap.Elt.t);
           in
           not_visited_neighbors selected visited
           |> List.map ~f:(fun (neighbor, move) -> (neighbor, (selected, move)))

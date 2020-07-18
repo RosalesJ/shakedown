@@ -25,6 +25,6 @@ let test_algo_from_state algo state =
 
 let () =
   let random_state = ET.random_state Puzzle.solved_witness 131361 in
-  let algo = EP.beam 30 in
+  let algo = EP.bfs in
 
   test_algo_from_state algo random_state

@@ -1,5 +1,5 @@
 (executable
   (name shakedown)
   (public_name shakedown)
-  (libraries core)
+  (libraries core core_kernel.pairing_heap)
   (preprocess (pps ppx_jane)))

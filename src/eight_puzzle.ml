@@ -26,7 +26,7 @@ let display_tile x = if x = 0 then "*" else string_of_int x
 
 let solved_witness = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
 
-let solvedp = (=) solved_witness
+let solvedp = phys_equal solved_witness
 
 let render = iter_tuple (function (a, b, c) -> Printf.printf "%s %s %s\n"
                                                  (display_tile a) (display_tile b) (display_tile c))
@@ -45,9 +45,9 @@ let push_row_right = function
   | x -> x
 
 let right = map_tuple push_row_left
-let left = map_tuple push_row_right
-let up = transpose *> left  *> transpose
-let down = transpose *> right *> transpose
+let left  = map_tuple push_row_right
+let up    = transpose *> left  *> transpose
+let down  = transpose *> right *> transpose
 
 let moves = [Left left; Right right; Up up; Down down]
 
