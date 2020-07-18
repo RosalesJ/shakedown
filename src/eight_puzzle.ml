@@ -4,8 +4,8 @@ open Common
 include Tuple_tools
 
 module T = struct
-  type row = int * int * int [@@deriving sexp]
-  type t   = row * row * row [@@deriving sexp]
+  type row = int * int * int [@@deriving sexp, equal]
+  type t   = row * row * row [@@deriving sexp, equal]
   let hash_state x = hash 1693 (map_tuple (hash 13) x)
 
   let compare a b = (hash_state a) - (hash_state b)
@@ -26,7 +26,7 @@ let display_tile x = if x = 0 then "*" else string_of_int x
 
 let solved_witness = ((0, 1, 2), (3, 4, 5), (6, 7, 8))
 
-let solvedp = phys_equal solved_witness
+let solvedp = equal solved_witness
 
 let render = iter_tuple (function (a, b, c) -> Printf.printf "%s %s %s\n"
                                                  (display_tile a) (display_tile b) (display_tile c))
