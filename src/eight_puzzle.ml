@@ -1,11 +1,14 @@
 open Core
 open Common
 
+
 include Tuple_tools
 
+type row = int * int * int [@@deriving sexp, equal]
+
 module T = struct
-  type row = int * int * int [@@deriving sexp, equal]
   type t   = row * row * row [@@deriving sexp, equal]
+
   let hash_state x = hash 1693 (map_tuple (hash 13) x)
 
   let compare a b = (hash_state a) - (hash_state b)
