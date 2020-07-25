@@ -25,6 +25,6 @@ let test_algo_from_state algo state =
 
 let () =
   let random_state = ET.random_state Puzzle.solved_witness 100 in
-  let algo = EP.dijkstra in
+  let algo = EP.dfs in
 
   test_algo_from_state algo random_state
